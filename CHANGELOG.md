@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- **Sync `pi-seed` with the fix found deploying the k3s sibling.** `pi-seed`'s `chmod 700` on the pi state directory requires owning it, not just having write access — on a fresh k3s PVC (root-owned even after `fsGroup` grants group-write) this crash-looped the initContainer forever under `set -eu`. This add-on's own `init-woow` runs as root, so the bug never manifested here, but `pi-seed` is byte-identical across all three deployments and hash-pinned in `rootfs/opt/SHA256SUMS` — re-vendored from `Woow_podman_code_server_package` to keep it that way. No behavior change on HA.
+
 ## 0.1.0
 
 - **Initial release.** Layers pi 0.83.0, pi-acp 0.0.33, and the ACP Client 0.2.0 chat sidebar onto `ghcr.io/hassio-addons/vscode:7.0.0`.
