@@ -1,0 +1,117 @@
+name: Build & Publish add-on image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - config.yaml
+      - build.yaml
+      - Dockerfile
+      - rootfs/**
+      - .github/workflows/build.yml
+  workflow_dispatch:
+    inputs:
+      push:
+        description: Push image to GHCR (false = build-only sanity check)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-hashes:
+    name: Verify shared-file hashes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check rootfs files against rootfs/opt/SHA256SUMS
+        # rootfs/opt/SHA256SUMS records absolute in-image paths (checked
+        # again inside the Dockerfile build itself). Here, before the image
+        # build, the same hashes are checked against the source files in
+        # rootfs/ on the runner — this is the check that catches a PR
+        # editing pi-code/pi.sh/pi-seed without updating the published
+        # hash. Source of truth for these three files is
+        # Woow_podman_code_server_package; a change there must land here
+        # in the same PR set (see PARITY_CONTRACT.md).
+        run: |
+          set -e
+          while read -r hash path; do
+            [ -n "${hash}" ] || continue
+            actual="$(sha256sum "rootfs${path}" | cut -d' ' -f1)"
+            if [ "${actual}" != "${hash}" ]; then
+              echo "MISMATCH: rootfs${path} expected ${hash} got ${actual}" >&2
+              exit 1
+            fi
+            echo "OK: rootfs${path}"
+          done < rootfs/opt/SHA256SUMS
+
+  build:
+    name: Build (${{ matrix.arch }})
+    needs: verify-hashes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: aarch64
+            platform: linux/arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read add-on metadata
+        id: meta
+        run: |
+          {
+            echo "name=$(yq '.name' config.yaml)"
+            echo "description=$(yq '.description' config.yaml)"
+            echo "version=$(yq '.version' config.yaml)"
+            echo "base_image=$(yq '.build_from.${{ matrix.arch }}' build.yaml)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push) }}
+          provenance: false
+          tags: |
+            ghcr.io/woowtech/woow-ha-code-server-${{ matrix.arch }}:${{ steps.meta.outputs.version }}
+            ghcr.io/woowtech/woow-ha-code-server-${{ matrix.arch }}:latest
+          build-args: |
+            BUILD_FROM=${{ steps.meta.outputs.base_image }}
+            BUILD_ARCH=${{ matrix.arch }}
+            BUILD_VERSION=${{ steps.meta.outputs.version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}
+            BUILD_DESCRIPTION=${{ steps.meta.outputs.description }}
+            BUILD_NAME=${{ steps.meta.outputs.name }}
+            BUILD_REF=${{ github.sha }}
+            BUILD_REPOSITORY=${{ github.repository }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.arch }},mode=max
