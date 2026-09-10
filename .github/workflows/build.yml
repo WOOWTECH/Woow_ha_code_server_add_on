@@ -160,3 +160,49 @@ jobs:
             BUILD_REPOSITORY=${{ github.repository }}
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,scope=${{ matrix.arch }},mode=max
+
+  # --- Tell the App Store to sync now -------------------------------------
+  # This repo is the source of truth for the store's `woow_ha_code_server`
+  # directory (mapping `woow_ha_code_server|Woow_ha_code_server_add_on|.` in
+  # Woow_HA_App_Store's sync-upstreams.yml). That sweep runs nightly at
+  # 20:00 UTC; this job is what turns "tonight" into "in a minute".
+  #
+  # `needs: build` is load-bearing: the store directory carries the version
+  # from config.yaml, and pointing users at a version whose images are not
+  # published yet is exactly the failure the Odoo release workflow was built
+  # to avoid. Both matrix legs must have pushed before the store hears about
+  # it.
+  #
+  # Not on pull_request, and not on a doc-only push — build.yml's paths
+  # filter already excludes those, so they reach the store at the nightly
+  # sweep instead. That is the right trade: a README typo does not warrant a
+  # store commit within the minute.
+  notify-app-store:
+    name: Notify App Store
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dispatch upstream-release to Woow_HA_App_Store
+        env:
+          # A cross-repo dispatch cannot use the default GITHUB_TOKEN — it is
+          # scoped to this repository. Same secret name the Odoo add-on uses.
+          GH_TOKEN: ${{ secrets.APP_STORE_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="$(yq -r '.version' config.yaml)"
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::warning::APP_STORE_DISPATCH_TOKEN is not set;" \
+              "the store will pick ${VERSION} up at its nightly sweep (20:00 UTC)"
+            exit 0
+          fi
+          gh api --method POST repos/WOOWTECH/Woow_HA_App_Store/dispatches \
+            -f event_type=upstream-release \
+            -f "client_payload[slug]=woow_ha_code_server" \
+            -f "client_payload[version]=${VERSION}" \
+            -f "client_payload[repository]=${GITHUB_REPOSITORY}"
+          echo "::notice::store sync dispatched for ${VERSION}"
