@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- **Documents the upstream signal-reporting bug, and ships a one-command check for it.** A bash command killed by a signal from outside pi's control — the OOM killer, an external `kill`, SIGSEGV, a `timeout` in the user's own command string — is returned to the model as a *successful* tool call with whatever partial output it produced (`isError: false`), so the agent cannot tell "the build finished" from "the build was OOM-killed halfway". This is an upstream bug in pi and is **not** patched out of the image: unlike the Unicode-path fix, the correct behaviour is a change to pi's tool contract, not a local rewrite. `KNOWN_UPSTREAM_ISSUES.md` records the root cause (`waitForChildProcess` registers `(code) => …` for Node's `(code, signal)` events and drops the signal), and `patches/f4-signal-repro.mjs` proves it with no model call and no auth — exit 3 means a future pi bump fixed it.
+
+- No behaviour change to the add-on itself.
+
 ## 0.1.4
 
 - **`npm install -g` installed to a directory that is not on the login `PATH`.** npm's prefix here was `/opt/node22`, and only the `pi` / `pi-acp` symlinks in `/usr/local/bin` are reachable from a login shell — so a package installed with `npm install -g` reported success and was then "command not found" in the very terminal it was installed from. Caught by `tests/smoke-toolchain.sh` running against the live 0.1.3 add-on, which is the reason that test asserts the binary is on `PATH` rather than stopping at "the install exited 0". The prefix is now `/opt/npm-global`, the same path the podman package and k3s chart use, with `rootfs/etc/profile.d/npm-global.sh` putting it back on `PATH` for login shells. pi and pi-acp are unaffected: they install with an explicit `--prefix /opt/node22` and are symlinked into `/usr/local/bin`.
