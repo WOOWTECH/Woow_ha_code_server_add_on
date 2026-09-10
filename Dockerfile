@@ -102,6 +102,26 @@ RUN set -euo pipefail; \
     | xargs -0 node /opt/patches/fix-unicode-space-paths.mjs; \
     node /opt/patches/f1-verify.mjs
 
+# --- npm global prefix, for RUNTIME installs only ---------------------------
+# Same path as the podman package and the k3s chart, deliberately: with three
+# deployments the recipe "install a CLI tool and use it" has to be one recipe.
+#
+# Declared AFTER the pi install above, which pins its own `--prefix
+# /opt/node22` and symlinks pi/pi-acp into /usr/local/bin, so this cannot move
+# them. What it fixes is the user-facing half: npm's prefix here was
+# /opt/node22, whose bin dir is NOT on the login PATH (only the two symlinks
+# are), so `npm install -g <pkg>` reported success and the binary was then
+# "command not found" in the very terminal it was installed from. Verified on
+# the live add-on before this change.
+#
+# rootfs/etc/profile.d/npm-global.sh puts this prefix's bin dir back on PATH
+# for login shells, and also picks up the opt-in persistent prefix on the pi
+# state volume (/data/pi-agent/npm-global) for globals that should survive a
+# restart. Both entries are guarded on existence, so the same file is correct
+# on all three deployments.
+ENV NPM_CONFIG_PREFIX=/opt/npm-global
+RUN mkdir -p /opt/npm-global/bin /opt/npm-global/lib
+
 # --- ACP Client extension, into the BUILTIN dir -----------------------------
 # Upstream's init-code-server purges /data/vscode/extensions/<id>* for every
 # line in /root/vscode.extensions on each boot (confirmed by reading its run

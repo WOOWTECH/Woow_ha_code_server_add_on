@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- **`npm install -g` installed to a directory that is not on the login `PATH`.** npm's prefix here was `/opt/node22`, and only the `pi` / `pi-acp` symlinks in `/usr/local/bin` are reachable from a login shell — so a package installed with `npm install -g` reported success and was then "command not found" in the very terminal it was installed from. Caught by `tests/smoke-toolchain.sh` running against the live 0.1.3 add-on, which is the reason that test asserts the binary is on `PATH` rather than stopping at "the install exited 0". The prefix is now `/opt/npm-global`, the same path the podman package and k3s chart use, with `rootfs/etc/profile.d/npm-global.sh` putting it back on `PATH` for login shells. pi and pi-acp are unaffected: they install with an explicit `--prefix /opt/node22` and are symlinked into `/usr/local/bin`.
+
 ## 0.1.3
 
 - **`extensions.autoUpdate` was leaving auto-update ON.** code-server 4.135.0 declares this setting as `{type: "string", enum: ["on","off"], default: "on"}` — it stopped being a boolean — and the workbench decides with `getAutoUpdateValue() !== "off"`. All three WOOWTECH packages seeded `false`, which fails schema validation, falls back to the default, and enables auto-update: exactly what pinning this setting is meant to prevent, since the ACP Client extension must not update itself out from under the pinned 0.2.0. The smoke test asserted `== false`, so it was green on the broken value. Seed and assertion are now `"off"` across all three repos. Verified by reading the schema and the decision site out of this build's own workbench bundle, not from upstream docs — `onlyEnabledExtensions`, the value upstream VS Code uses, does not appear in this build at all.
