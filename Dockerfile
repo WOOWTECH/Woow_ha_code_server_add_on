@@ -63,6 +63,45 @@ RUN set -euo pipefail; \
 RUN test "$(pi --version)" = "${PI_CODING_AGENT_VERSION}"
 RUN command -v pi-acp >/dev/null
 
+# --- Stop silent Unicode-space path corruption -------------------------------
+# pi folds U+00A0, U+2000-200A, U+202F, U+205F and U+3000 to an ASCII space on
+# every read/write/edit, and builds its read fallback chain from the
+# ALREADY-FOLDED path, so the exact path the caller asked for is never tried.
+# Reproduced end to end on pi 0.83.0:
+#
+#   - read of `Q1<U+3000>報告.txt` returned the contents of the sibling
+#     `Q1<SPACE>報告.txt`, with isError:false — a confidential/public pair
+#     differing only by space type cross-reads.
+#   - write to `V1<U+3000>DOC.txt` reported success and OVERWROTE the
+#     ASCII-space sibling instead.
+#
+# U+3000 IDEOGRAPHIC SPACE is ordinary in Traditional Chinese and Japanese
+# filenames, so for a zh-TW deployment this is data loss, not an edge case.
+# The patch turns folding into a READ-ONLY FALLBACK (a path pasted with a
+# non-breaking space still resolves) while writes are never rewritten.
+#
+# patches/ is byte-identical with Woow_podman_code_server_package. The only
+# difference here is the search root: this add-on installs pi with
+# `--prefix /opt/node22`, the podman image uses npm's default /usr prefix.
+#
+# f1-verify.mjs ships alongside it, and tests/smoke-pi-integration.sh runs it
+# against the LIVE add-on. That check is the important half: the original
+# incident was not a broken patch script, it was a patch script that was never
+# invoked, and no build-time assertion can catch that.
+COPY patches/ /opt/patches/
+RUN set -euo pipefail; \
+    COUNT=$(find /opt/node22/lib/node_modules/@earendil-works \
+      -path '*/dist/*/tools/path-utils.js' | wc -l); \
+    echo "[patch] found ${COUNT} path-utils.js copies"; \
+    if [ "${COUNT}" -lt 2 ]; then \
+      echo "[patch] FAIL: expected at least 2 copies, found ${COUNT}" >&2; \
+      exit 1; \
+    fi; \
+    find /opt/node22/lib/node_modules/@earendil-works \
+      -path '*/dist/*/tools/path-utils.js' -print0 \
+    | xargs -0 node /opt/patches/fix-unicode-space-paths.mjs; \
+    node /opt/patches/f1-verify.mjs
+
 # --- ACP Client extension, into the BUILTIN dir -----------------------------
 # Upstream's init-code-server purges /data/vscode/extensions/<id>* for every
 # line in /root/vscode.extensions on each boot (confirmed by reading its run
@@ -90,6 +129,7 @@ RUN set -euo pipefail; \
 RUN mkdir -p /opt/pi-agent-skel/home/.pi/agent \
              /opt/pi-agent-skel/sessions \
              /opt/pi-agent-skel/skills \
+             /opt/pi-agent-skel/npm-global/bin \
  && touch /opt/pi-agent-skel/.woow-pi-store
 
 COPY rootfs/ /

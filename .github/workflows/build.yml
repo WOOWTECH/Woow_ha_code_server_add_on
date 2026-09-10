@@ -9,6 +9,19 @@ on:
       - build.yaml
       - Dockerfile
       - rootfs/**
+      - patches/**
+      - .github/workflows/build.yml
+  # Also on PRs, so verify-hashes and the two guards below actually gate a
+  # change. Without this the whole job only ran AFTER a merge to main —
+  # which is exactly how the /home/coder comments and the never-invoked
+  # patch script got in.
+  pull_request:
+    paths:
+      - config.yaml
+      - build.yaml
+      - Dockerfile
+      - rootfs/**
+      - patches/**
       - .github/workflows/build.yml
   workflow_dispatch:
     inputs:
@@ -53,6 +66,38 @@ jobs:
             fi
             echo "OK: rootfs${path}"
           done < rootfs/opt/SHA256SUMS
+
+      - name: No /home/coder references (this image has no such user)
+        # The shared files here are vendored from
+        # Woow_podman_code_server_package, whose login user IS coder. A
+        # verbatim copy of a comment mentioning /home/coder was shipped in
+        # this add-on and sent a debugging session down the wrong path: the
+        # login user here is root, and the ~/.pi symlink the comment
+        # described is created at runtime by init-woow, not by the image
+        # build. tests/lib/parity.sh is exempt — it is a multi-target
+        # adapter and names all three deployments' paths on purpose.
+        run: |
+          set -e
+          if grep -rn '/home/coder' Dockerfile rootfs/ patches/ 2>/dev/null; then
+            echo "" >&2
+            echo "Found /home/coder above. This image runs as root and has no" >&2
+            echo "coder user; a path or comment was copied from the podman" >&2
+            echo "package without adapting it. Shared files (pi-code, pi.sh)" >&2
+            echo "must be written platform-neutrally in ALL THREE repos." >&2
+            exit 1
+          fi
+          echo "OK: no /home/coder references"
+
+      - name: Unicode-space patch is wired into the build
+        # The F1 incident was not a broken patch script — it was a patch
+        # script that existed and was never invoked. Assert the Dockerfile
+        # actually calls it, so deleting the RUN line fails CI rather than
+        # silently shipping the corruption again.
+        run: |
+          set -e
+          grep -q 'fix-unicode-space-paths.mjs' Dockerfile
+          grep -q 'f1-verify.mjs' Dockerfile
+          echo "OK: patch + verifier are invoked by the build"
 
   build:
     name: Build (${{ matrix.arch }})
