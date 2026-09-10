@@ -11,6 +11,18 @@ on:
       - rootfs/**
       - patches/**
       - .github/workflows/build.yml
+  # Also on PRs, so verify-hashes and the two guards below actually gate a
+  # change. Without this the whole job only ran AFTER a merge to main —
+  # which is exactly how the /home/coder comments and the never-invoked
+  # patch script got in.
+  pull_request:
+    paths:
+      - config.yaml
+      - build.yaml
+      - Dockerfile
+      - rootfs/**
+      - patches/**
+      - .github/workflows/build.yml
   workflow_dispatch:
     inputs:
       push:
