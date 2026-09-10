@@ -10,5 +10,5 @@
     "security.workspace.trust.startupPrompt": "never",
     "security.workspace.trust.banner": "never",
     "security.workspace.trust.emptyWindow": false,
-    "extensions.autoUpdate": false
+    "extensions.autoUpdate": "off"
 }

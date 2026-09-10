@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- **`extensions.autoUpdate` was leaving auto-update ON.** code-server 4.135.0 declares this setting as `{type: "string", enum: ["on","off"], default: "on"}` — it stopped being a boolean — and the workbench decides with `getAutoUpdateValue() !== "off"`. All three WOOWTECH packages seeded `false`, which fails schema validation, falls back to the default, and enables auto-update: exactly what pinning this setting is meant to prevent, since the ACP Client extension must not update itself out from under the pinned 0.2.0. The smoke test asserted `== false`, so it was green on the broken value. Seed and assertion are now `"off"` across all three repos. Verified by reading the schema and the decision site out of this build's own workbench bundle, not from upstream docs — `onlyEnabledExtensions`, the value upstream VS Code uses, does not appear in this build at all.
+
 ## 0.1.2
 
 - **Stops silent Unicode-space path corruption.** pi folds U+00A0, U+2000-200A, U+202F, U+205F and U+3000 to an ASCII space on every read, write and edit, and builds its read fallback chain from the already-folded path — so the exact path the caller asked for is never tried. With `Q1　報告.txt` (U+3000) and `Q1 報告.txt` (ASCII) both present, reading the first returned the **second** file's contents with `isError: false`, and writing to the first overwrote the second. U+3000 IDEOGRAPHIC SPACE is ordinary in Traditional Chinese and Japanese filenames, so on a zh-TW install this is data loss, not an edge case. `patches/fix-unicode-space-paths.mjs` (byte-identical with the podman package) turns the folding into a read-only *fallback*: the exact path is tried first and writes are never rewritten, while a path pasted with a non-breaking space still resolves. The build fails rather than skipping if upstream refactors the file.
