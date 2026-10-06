@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "repository": "WOOWTECH/Woow_ha_code_server_add_on",
+  "components": {
+    "woow_ha_code_server": {
+      "id": "woow_ha_code_server",
+      "name": "Woow Code Server",
+      "version": "0.1.6",
+      "repository": "WOOWTECH/Woow_ha_code_server_add_on",
+      "source_sha": "14cfd949c92505cec48dbe502080298da5cc36d5",
+      "source_path": ".",
+      "config_file": "config.yaml",
+      "config_sha256": "sha256:aa7bcaf1fb3d5daac04cf4d9030d676e25394417abe87d468bf33bf3b368c60b",
+      "archive_sha256": "sha256:ee36c3498eccc838c14d1590c5222dd9fa5f44008acbea9063010db8070b63ee",
+      "context_fingerprint": "sha256:369e2e7bbed05dcf9e13e9d4a3bda319811015dd40fbb5e51ad62da8d9fd7af4",
+      "material_fingerprint": "sha256:49cb566b25dce2db697a5a37482e00695044b93e515766669dc829660f246348",
+      "architectures": [
+        "amd64",
+        "aarch64"
+      ],
+      "config": {
+        "name": "Woow Code Server",
+        "version": "0.1.6",
+        "slug": "woow_ha_code_server",
+        "description": "code-server 4.139.1 with the pi coding agent (0.99.1) and Claude Code (2.1.285), pi-acp and the ACP Client chat sidebar baked in — WOOWTECH build layered on the Home Assistant Community vscode add-on",
+        "url": "https://github.com/WOOWTECH/Woow_ha_code_server_add_on",
+        "arch": [
+          "amd64",
+          "aarch64"
+        ],
+        "init": false,
+        "startup": "services",
+        "boot": "auto",
+        "uart": true,
+        "hassio_api": true,
+        "hassio_role": "manager",
+        "homeassistant_api": true,
+        "ingress": true,
+        "ingress_port": 1337,
+        "ingress_stream": true,
+        "panel_icon": "mdi:microsoft-visual-studio-code",
+        "panel_title": "Code Server",
+        "panel_admin": true,
+        "watchdog": "http://[HOST]:[PORT:1337]/healthz",
+        "map": [
+          {
+            "type": "addons",
+            "read_only": false
+          },
+          {
+            "type": "all_addon_configs",
+            "read_only": false
+          },
+          {
+            "type": "backup",
+            "read_only": false
+          },
+          {
+            "type": "homeassistant_config",
+            "read_only": false,
+            "path": "/config"
+          },
+          {
+            "type": "media",
+            "read_only": false
+          },
+          {
+            "type": "share",
+            "read_only": false
+          },
+          {
+            "type": "ssl",
+            "read_only": false
+          }
+        ],
+        "services": [
+          "mysql:want",
+          "mqtt:want"
+        ],
+        "backup": "cold",
+        "backup_exclude": [
+          "**/vscode/logs/**",
+          "**/vscode/CachedProfilesData/**",
+          "**/pi-agent/models-store.json",
+          "**/pi-agent/home/**/node_modules/**",
+          "**/pi-agent/sessions/*.jsonl.tmp"
+        ],
+        "ports": {
+          "1338/tcp": null
+        },
+        "ports_description": {
+          "1338/tcp": "Direct (non-ingress) access front. Leave unmapped. Only map this if the ACP chat sidebar does not render under HA ingress — and only together with direct_password, which gates it with HTTP Basic auth."
+        },
+        "options": {
+          "log_level": "info",
+          "config_path": "/share/projects",
+          "packages": [],
+          "init_commands": [],
+          "timezone": "",
+          "pi_default_provider": "",
+          "pi_default_model": "",
+          "direct_password": "",
+          "anthropic_api_key": "",
+          "reset_pi_state": false,
+          "env_vars": []
+        },
+        "schema": {
+          "log_level": "list(trace|debug|info|notice|warning|error|fatal)?",
+          "config_path": "str?",
+          "packages": [
+            "str"
+          ],
+          "init_commands": [
+            "str"
+          ],
+          "timezone": "str?",
+          "pi_default_provider": "str?",
+          "pi_default_model": "str?",
+          "direct_password": "password?",
+          "anthropic_api_key": "password?",
+          "reset_pi_state": "bool",
+          "env_vars": [
+            {
+              "name": "str",
+              "value": "str"
+            }
+          ]
+        },
+        "image": "ghcr.io/woowtech/woow-ha-code-server-{arch}"
+      },
+      "source_build_supported": true,
+      "images": {
+        "amd64": {
+          "reference": "ghcr.io/woowtech/woow-ha-code-server-amd64:0.1.6",
+          "index_digest": "sha256:6fc9cb57a8e34898bded261c9d6c00a8361f8c034d11824acb90a37b74b1b879",
+          "digest": "sha256:6fc9cb57a8e34898bded261c9d6c00a8361f8c034d11824acb90a37b74b1b879",
+          "source_revision": "ce35422ee4c589a3cbf920656510ae1b3783fe2e"
+        },
+        "aarch64": {
+          "reference": "ghcr.io/woowtech/woow-ha-code-server-aarch64:0.1.6",
+          "index_digest": "sha256:9322345b83de6b54fd5042c1f70926126b6dd0e46600ae3f341317670cca5d50",
+          "digest": "sha256:9322345b83de6b54fd5042c1f70926126b6dd0e46600ae3f341317670cca5d50",
+          "source_revision": "ce35422ee4c589a3cbf920656510ae1b3783fe2e"
+        }
+      },
+      "delivery": "published-image",
+      "validation": "manifest+architecture-images+configured-CI",
+      "publisher_run_id": "37410125463",
+      "channel": "stable"
+    }
+  }
+}
