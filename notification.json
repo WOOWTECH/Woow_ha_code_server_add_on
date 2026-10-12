@@ -7,11 +7,11 @@
       "name": "Woow Code Server",
       "version": "0.1.6",
       "repository": "WOOWTECH/Woow_ha_code_server_add_on",
-      "source_sha": "14cfd949c92505cec48dbe502080298da5cc36d5",
+      "source_sha": "f23c64f847d15b1c659f39c8b8d8f8f1dfe3506d",
       "source_path": ".",
       "config_file": "config.yaml",
       "config_sha256": "sha256:aa7bcaf1fb3d5daac04cf4d9030d676e25394417abe87d468bf33bf3b368c60b",
-      "archive_sha256": "sha256:ee36c3498eccc838c14d1590c5222dd9fa5f44008acbea9063010db8070b63ee",
+      "archive_sha256": "sha256:f1010b59979da4f335205dd323a43a3d0f396c29490b598938421baaca298b18",
       "context_fingerprint": "sha256:369e2e7bbed05dcf9e13e9d4a3bda319811015dd40fbb5e51ad62da8d9fd7af4",
       "material_fingerprint": "sha256:49cb566b25dce2db697a5a37482e00695044b93e515766669dc829660f246348",
       "architectures": [
@@ -145,7 +145,7 @@
       },
       "delivery": "published-image",
       "validation": "manifest+architecture-images+configured-CI",
-      "publisher_run_id": "37410125463",
+      "publisher_run_id": "38206813797",
       "channel": "stable"
     }
   }
