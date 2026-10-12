@@ -195,6 +195,16 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,scope=${{ matrix.arch }},mode=max
 
+  # Both architecture images are pushed: publish the Release the App Store
+  # ships. The shared workflow tags v<version> and skips a released version.
+  release:
+    name: Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: WOOWTECH/Woow_HA_App_Store/.github/workflows/woow-addon-release.yml@main
+
   # --- Tell the App Store to sync now -------------------------------------
   # This repo is the source of truth for the store's `woow_ha_code_server`
   # directory (mapping `woow_ha_code_server|Woow_ha_code_server_add_on|.` in
