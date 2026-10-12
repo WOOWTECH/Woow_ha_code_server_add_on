@@ -3,7 +3,8 @@ name: Build & Publish add-on image
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    # No tag trigger: a Release (and its tag) is created after this workflow
+    # has built and pushed the version, so a tag push must not rebuild it.
     paths:
       - config.yaml
       - build.yaml
@@ -99,9 +100,42 @@ jobs:
           grep -q 'f1-verify.mjs' Dockerfile
           echo "OK: patch + verifier are invoked by the build"
 
+  # A version with a Release is what the App Store ships (registry
+  # ref_policy: release), so its image is never rebuilt under the same tag.
+  # Pushes that do not bump config.yaml therefore build only on PRs; the next
+  # version bump builds, checks and releases them.
+  released:
+    name: Check whether this version is released
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.check.outputs.released }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Look up the Release for config.yaml's version
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(yq -r '.version' config.yaml)"
+          # Only "not found" means unreleased; any other lookup failure stops
+          # the run rather than overwrite a shipped image.
+          if out="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/v${version}" 2>&1)"; then
+            echo "::notice::This version is already released; its image is not rebuilt"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          elif grep -q 'HTTP 404' <<< "${out}"; then
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Could not look up the Release for this version" >&2
+            exit 1
+          fi
+
   build:
     name: Build (${{ matrix.arch }})
-    needs: verify-hashes
+    needs: [verify-hashes, released]
+    if: github.event_name == 'pull_request' || needs.released.outputs.released != 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
