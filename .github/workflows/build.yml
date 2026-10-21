@@ -16,14 +16,8 @@ on:
   # change. Without this the whole job only ran AFTER a merge to main —
   # which is exactly how the /home/coder comments and the never-invoked
   # patch script got in.
+  # PRs run unfiltered so the ruleset's required checks always report (release-gating #88).
   pull_request:
-    paths:
-      - config.yaml
-      - build.yaml
-      - Dockerfile
-      - rootfs/**
-      - patches/**
-      - .github/workflows/build.yml
   workflow_dispatch:
     inputs:
       push:
