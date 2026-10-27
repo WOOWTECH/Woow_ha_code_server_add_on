@@ -200,7 +200,7 @@ jobs:
       # SBOM is of the layers the Release build reuses.
       - name: SBOM for the upgrade comparison
         if: github.event_name == 'pull_request' && matrix.arch == 'amd64'
-        uses: WOOWTECH/Woow_HA_App_Store/.github/actions/addon-sbom@main
+        uses: WOOWTECH/Woow_HA_App_Store/.github/actions/addon-sbom@feat/89-upgrade-comparison
         with:
           component: woow_ha_code_server
           image: ghcr.io/woowtech/woow-ha-code-server-amd64:${{ steps.meta.outputs.version }}
@@ -220,8 +220,9 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: WOOWTECH/Woow_HA_App_Store/.github/workflows/woow-addon-upgrade-check.yml@main
+    uses: WOOWTECH/Woow_HA_App_Store/.github/workflows/woow-addon-upgrade-check.yml@feat/89-upgrade-comparison
     with:
+      tooling_ref: feat/89-upgrade-comparison
       sbom_artifact: upgrade-comparison-sbom-*
 
   # Both architecture images are pushed: publish the Release the App Store
