@@ -205,6 +205,17 @@ jobs:
           component: woow_ha_code_server
           image: ghcr.io/woowtech/woow-ha-code-server-amd64:${{ steps.meta.outputs.version }}
 
+      # The same image is the new version of the upgrade test (pipeline
+      # #143, category 2): saved and uploaded as artifact
+      # upgrade-comparison-image-woow_ha_code_server-attempt-<run attempt>,
+      # so the comparison neither rebuilds it nor needs a PR tag on GHCR.
+      - name: Image for the upgrade test
+        if: github.event_name == 'pull_request' && matrix.arch == 'amd64'
+        uses: WOOWTECH/Woow_HA_App_Store/.github/actions/addon-image@main
+        with:
+          component: woow_ha_code_server
+          image: ghcr.io/woowtech/woow-ha-code-server-amd64:${{ steps.meta.outputs.version }}
+
   # Upgrade comparison (pipeline #89): a PR that bumps the add-on version is
   # compared with the latest formal Release. A breaking config.yaml change
   # not declared in upgrade-notes.yaml blocks it, and so does a new fixable
@@ -215,6 +226,10 @@ jobs:
   # (actions: read) and fails if Build (amd64) never uploads it. On push the
   # job passes at once, so this workflow's non-PR run (registry
   # required_workflows) still succeeds. Reported as "Upgrade comparison / compare".
+  # The upgrade test (#137, #143) starts the Release's GHCR image, then this
+  # PR's image (the amd64 build's image artifact) on the same /data and map
+  # directories; a new version that does not start blocks. Startup only, no
+  # data check yet. After a version bump it also waits for this run's image.
   upgrade-comparison:
     name: Upgrade comparison
     permissions:
@@ -223,6 +238,7 @@ jobs:
     uses: WOOWTECH/Woow_HA_App_Store/.github/workflows/woow-addon-upgrade-check.yml@main
     with:
       sbom_artifact: upgrade-comparison-sbom-*
+      image_artifact: upgrade-comparison-image-*
 
   # Both architecture images are pushed: publish the Release the App Store
   # ships. The shared workflow tags v<version> and skips a released version.
