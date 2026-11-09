@@ -53,6 +53,8 @@ else
     bad "settings.json missing at ${SETTINGS}"
 fi
 
+# Expand CODEX_HOME inside the add-on shell, not on the test host.
+# shellcheck disable=SC2016
 if CX sh -lc 'command -v codex >/dev/null && command -v codex-acp >/dev/null && test "$CODEX_HOME" = /data/pi-agent/codex'; then
     ok "Codex CLI and ACP adapter share the persistent state path"
 else
