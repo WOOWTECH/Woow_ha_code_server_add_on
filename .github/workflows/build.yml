@@ -94,6 +94,12 @@ jobs:
           grep -q 'f1-verify.mjs' Dockerfile
           echo "OK: patch + verifier are invoked by the build"
 
+      - name: Install pinned shared-agent test dependencies
+        run: npm ci --prefix rootfs/opt/woow-agent-tools --omit=dev
+
+      - name: Shared skills and MCP migration
+        run: node --test tests/shared-agents.test.mjs
+
       - name: Claude state migration preserves existing credentials
         run: sh tests/migrate-claude-state.sh
 
