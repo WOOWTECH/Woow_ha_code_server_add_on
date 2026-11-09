@@ -49,7 +49,7 @@ Via the WOOWTECH HA App Store, or directly:
 
 1. HA → Settings → Add-ons → Add-on Store → ⋮ → Repositories → add `https://github.com/WOOWTECH/Woow_ha_code_server_add_on`.
 2. Install **Woow Code Server**, start it.
-3. Open the Web UI from the sidebar.
+3. Open the Web UI from the sidebar using your Home Assistant HTTPS address; an HTTP LAN address cannot load the ACP chat webview.
 4. Open a terminal and run `pi login` for Pi and `codex login --device-auth` for the separate Codex agent. Each has its own private credential under `/data/pi-agent`.
 
 Full checklist: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
