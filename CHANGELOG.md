@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+- **Node 22.23.2 → 22.23.4** (Node.js security release). The only image change: code-server 4.139.1 (base `hassio-addons/vscode` 7.2.0), pi 0.99.1, pi-acp 0.0.34, Claude Code 2.1.285, the Claude Code extension and claude-agent-acp 0.84.0 are unchanged, and so are the hash-pinned shared files. PARITY_CONTRACT §2 pins only Node's major version.
+- **The upgrade test now checks data.** New `upgrade-check/seed` and `verify` hooks: a user file under `/data/pi-agent`, a user setting and a custom ACP agent in `/data/vscode/User/settings.json` must survive the upgrade, and after the new version's `init-woow` merge both the `pi` and `claude` agents are present and the custom agent is untouched.
+- **PARITY_CONTRACT and the ACP smoke test synced with the podman package** (its 2026-11-09 operational update). P09 now asks for `claude` and `pi` to be present instead of exactly those two, so an agent you add yourself no longer fails the parity check. `tests/smoke-acp.sh` also checks the Claude Code extension, `claude` and `claude-agent-acp` on `PATH`, `claude --version` and `acp.agents.claude.command`. HA does not adopt the podman package's extension volume: `/data/vscode/extensions` is already persistent here.
+- No change to options or to the data layout.
+
 ## 0.1.6
 
 - **PARITY_CONTRACT 1.1 — same-day bump with the podman package and the k3s chart.** code-server **4.139.1** (base `hassio-addons/vscode` 7.0.0 → **7.2.0**; its rootfs and s6 layout are unchanged), pi **0.99.1**, pi-acp **0.0.34**. The Unicode-space patch still applies to both `path-utils.js` copies and `f1-verify.mjs` runs in the build.
