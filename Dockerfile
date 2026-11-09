@@ -35,7 +35,7 @@ RUN apt-get update \
 # which may pin a different Debian release). Arch is mapped from BUILD_ARCH,
 # set by the CI matrix (amd64/aarch64, matching HA's own {arch} convention).
 ARG BUILD_ARCH=amd64
-ARG NODE_VERSION=22.23.2
+ARG NODE_VERSION=22.23.4
 RUN set -euo pipefail; \
     case "${BUILD_ARCH}" in \
       amd64)   NARCH=x64 ;; \
