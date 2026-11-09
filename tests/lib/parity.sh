@@ -34,6 +34,7 @@ podman)
     CX_ROOT()  { podman exec "${PODMAN_CONTAINER}" "$@"; }
     LIVENESS() { podman inspect --format '{{.State.Health.Status}}' "${PODMAN_CONTAINER}" 2>/dev/null; }
     EXT_INSTALLED() { CX code-server --list-extensions 2>/dev/null | grep -qi '^formulahendry\.acp-client$'; }
+    CLAUDE_EXT_INSTALLED() { CX sh -c 'ls /usr/lib/code-server/lib/vscode/extensions/ 2>/dev/null' | grep -qi '^anthropic\.claude-code-2\.1\.285'; }
     ;;
 ha)
     : "${SSHHA:?set SSHHA to the ssh helper, e.g. /path/to/sshha.sh}"
@@ -65,6 +66,7 @@ ha)
     CX_ROOT()  { CX "$@"; }
     LIVENESS() { "${SSHHA}" "docker inspect --format '{{.State.Status}}' ${HA_ADDON_CONTAINER}" 2>/dev/null | tr -d '\r'; }
     EXT_INSTALLED() { CX_ROOT sh -c 'ls /usr/local/lib/code-server/lib/vscode/extensions/ 2>/dev/null' | grep -qi '^formulahendry\.acp-client-'; }
+    CLAUDE_EXT_INSTALLED() { CX_ROOT sh -c 'ls /usr/local/lib/code-server/lib/vscode/extensions/ 2>/dev/null' | grep -qi '^anthropic\.claude-code-2\.1\.285$'; }
     ;;
 k3s)
     # The k3s leg is the WOOW PaaS code-server cloud service (PARITY_CONTRACT
@@ -84,6 +86,7 @@ k3s)
     # The PaaS image keeps the pinned extensions in the built-in dir (the user
     # extensions dir is on the tenant volume), which --list-extensions skips.
     EXT_INSTALLED() { CX sh -c 'ls /usr/lib/code-server/lib/vscode/extensions/ 2>/dev/null' | grep -qi '^formulahendry\.acp-client-'; }
+    CLAUDE_EXT_INSTALLED() { CX sh -c 'ls /usr/lib/code-server/lib/vscode/extensions/ 2>/dev/null' | grep -qi '^anthropic\.claude-code-2\.1\.285'; }
     ;;
 *)
     echo "Unknown PARITY_TARGET=${PARITY_TARGET} (want podman|ha|k3s)" >&2
