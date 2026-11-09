@@ -4,3 +4,6 @@ options.json
 *.pem
 .env
 .DS_Store
+
+# Build/runtime npm dependencies
+node_modules
