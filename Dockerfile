@@ -235,7 +235,7 @@ ENV CODEX_HOME=/data/pi-agent/codex \
 COPY connectors/ /opt/woow-connectors/
 COPY --from=connector-vsix /build/extensions/dist/ /opt/woow-connector-vsix/
 RUN apt-get update \
- && apt-get install -y --no-install-recommends tmux bubblewrap util-linux python3 \
+ && apt-get install -y --no-install-recommends tmux bubblewrap util-linux procps python3 \
  && rm -rf /var/lib/apt/lists/* \
  && chmod +x /opt/woow-connectors/install-runtime.sh \
              /opt/woow-connectors/paseo/install-runtime.sh \
