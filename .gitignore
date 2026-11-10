@@ -7,3 +7,11 @@ options.json
 
 # Build/runtime npm dependencies
 node_modules
+
+**/node_modules/
+extensions/dist/
+connectors/omnigent/runtime/
+connectors/python/
+connectors/bootstrap/
+__pycache__/
+*.pyc

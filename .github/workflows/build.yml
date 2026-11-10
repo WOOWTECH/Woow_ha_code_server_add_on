@@ -10,6 +10,8 @@ on:
       - build.yaml
       - Dockerfile
       - rootfs/**
+      - connectors/**
+      - extensions/**
       - patches/**
       - .github/workflows/build.yml
   # Also on PRs, so verify-hashes and the two guards below actually gate a
