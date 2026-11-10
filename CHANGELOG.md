@@ -2,7 +2,8 @@
 
 ## 0.1.13
 
-- Paseo / Omnigent extensions 0.1.5 add an explicit **Refresh shared MCP** action for an existing conversation, with idle and native-context guards and managed-server removals. Paseo supports Claude/Codex/Pi; Omnigent supports Codex native reload and prepared Pi native sessions. Existing Pi sessions require explicit operator preparation before refresh.
+- Paseo / Omnigent extensions 0.1.5 add an explicit **Refresh shared MCP** action for an existing conversation, with idle and native-context guards and managed-server removals. Paseo supports Claude/Codex/Pi; Omnigent supports Codex native reload, guarded Claude reload and prepared Pi native sessions. Existing Pi sessions require explicit operator preparation before refresh.
+- Explicit cold-resume helpers bind the original Claude/Pi native ID and full history prefix. They verify the attached native process and refuse a fresh-session fallback. Shared MCP writes preserve concurrent native preferences under the native configuration lock.
 - Paseo panel guidance explains the native workspace download flow: open the file, then Explorer → Files → right-click → Download.
 - Preserve user settings, model logins, native conversation IDs and unrelated MCP entries.
 
