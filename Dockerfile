@@ -6,6 +6,9 @@ COPY extensions/ ./
 RUN npm ci --ignore-scripts --no-audit --no-fund && npm run package
 
 FROM ${BUILD_FROM}
+
+# Explicit, backed-up GPT-6 gateway migration; never runs on startup.
+COPY patches/configure-pi-responses.mjs /opt/woow-agent-tools/configure-pi-responses.mjs
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV LANG=C.UTF-8 \
