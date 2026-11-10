@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.13
+
+- Paseo / Omnigent extensions 0.1.5 add an explicit **Refresh shared MCP** action for an existing conversation, with idle and native-context guards and managed-server removals. Paseo supports Claude/Codex/Pi; Omnigent currently supports Codex native reload.
+- Paseo panel guidance explains the native workspace download flow: open the file, then Explorer → Files → right-click → Download.
+- Preserve user settings, model logins, native conversation IDs and unrelated MCP entries.
+
 ## 0.1.12
 
 - Node 22.23.2 → 22.23.4（Node.js 安全性更新），執行環境的 Node 與打包 connector 插件的建置階段一起更新。pi、Claude Code、Codex、各插件、base image 與 hash 釘住的共用檔案都不變。
