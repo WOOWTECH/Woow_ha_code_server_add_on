@@ -234,7 +234,7 @@ RUN npm ci --prefix /opt/woow-agent-tools --omit=dev \
  && test "$(codex --version)" = "codex-cli ${CODEX_CLI_VERSION}" \
  && test "$(codex-acp --version)" = "@agentclientprotocol/codex-acp ${CODEX_ACP_VERSION}"
 ENV CODEX_HOME=/data/pi-agent/codex \
-    CODEX_PATH=/opt/woow-agent-tools/node_modules/.bin/codex
+    CODEX_PATH=/usr/local/bin/codex
 
 COPY connectors/ /opt/woow-connectors/
 COPY --from=connector-vsix /build/extensions/dist/ /opt/woow-connector-vsix/
@@ -247,6 +247,11 @@ RUN apt-get update \
  && /opt/woow-connectors/install-runtime.sh
 
 COPY rootfs/ /
+# Replace the npm symlink after copying rootfs; never write through it into npm.
+RUN chmod 0755 /usr/local/bin/woow-codex /opt/woow-agent-tools/sandbox-bin/bwrap \
+ && rm -f /usr/local/bin/codex && ln -s /usr/local/bin/woow-codex /usr/local/bin/codex \
+ && sh -n /usr/local/bin/woow-codex && bash -n /opt/woow-agent-tools/sandbox-bin/bwrap \
+ && test -x /usr/bin/bwrap && codex --version
 RUN chmod +x /usr/local/bin/pi-code /usr/local/bin/pi-seed \
              /usr/local/bin/codex-code /usr/local/bin/woow-agent-sync \
              /usr/local/bin/woow-connectors /usr/local/bin/woow-connectors-service \
