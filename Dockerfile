@@ -177,6 +177,7 @@ RUN set -euo pipefail; \
     cp -a /tmp/acp-vsix/extension/. "${EXT_DIR}/"; \
     rm -rf /tmp/acp.vsix /tmp/acp-vsix; \
     test -f "${EXT_DIR}/package.json"; \
+    node /opt/patches/patch-acp-permission-queue.mjs "${EXT_DIR}/dist/extension.js"; \
     echo "formulahendry.acp-client#${ACP_CLIENT_VERSION}" >> /root/vscode.extensions
 
 # The official Claude Code extension, same pin as podman/k3s. Open VSX ships
