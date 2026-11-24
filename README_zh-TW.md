@@ -51,7 +51,7 @@ init-woow（新）  →  init-code-server（上游）  →  code-server（上游
 
 1. HA → Settings → Add-ons → Add-on Store → ⋮ → Repositories → 加入 `https://github.com/WOOWTECH/Woow_ha_code_server_add_on`。
 2. 安裝 **Woow Code Server**，啟動它。
-3. 從側邊欄打開 Web UI。
+3. 用 Home Assistant 的 HTTPS 網址，從側邊欄打開 Web UI；用區網的 HTTP 網址開，ACP 聊天畫面會載入不了。
 4. 開一個 terminal 跑 `pi login`——這個 add-on 的 pi 在你做這件事之前是沒有任何憑證的。
 
 完整檢查清單：[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)。
