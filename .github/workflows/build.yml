@@ -26,6 +26,10 @@ on:
         description: Push image to GHCR (false = build-only sanity check)
         type: boolean
         default: true
+      candidate:
+        description: Publish a unique QA candidate (overrides push; no stable tags or Release)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -114,7 +118,8 @@ jobs:
   # A version with a Release is what the App Store ships (registry
   # ref_policy: release), so its image is never rebuilt under the same tag.
   # Pushes that do not bump config.yaml therefore build only on PRs; the next
-  # version bump builds, checks and releases them.
+  # version bump builds, checks and releases them. Explicit QA candidates use
+  # unique tags and may build an already released version without replacing it.
   released:
     name: Check whether this version is released
     runs-on: ubuntu-latest
@@ -124,12 +129,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Look up the Release for config.yaml's version
+      - name: Guard publication and look up the Release for config.yaml's version
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
+          DISPATCH_PUSH: ${{ inputs.push }}
+          CANDIDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.candidate }}
         run: |
           set -euo pipefail
+          if [[ "$CANDIDATE" == true ]]; then
+            # QA tags never replace a released image, even at the same version.
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$DISPATCH_PUSH" == true && "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "::error::Stable image publication requires main. Select candidate=true for a QA image on this ref." >&2
+            exit 1
+          fi
           version="$(yq -r '.version' config.yaml)"
           # Only "not found" means unreleased; any other lookup failure stops
           # the run rather than overwrite a shipped image.
@@ -162,12 +178,24 @@ jobs:
 
       - name: Read add-on metadata
         id: meta
+        env:
+          CANDIDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.candidate }}
+          IMAGE_ARCH: ${{ matrix.arch }}
         run: |
           {
             echo "name=$(yq '.name' config.yaml)"
             echo "description=$(yq '.description' config.yaml)"
             echo "version=$(yq '.version' config.yaml)"
             echo "base_image=$(yq '.build_from.${{ matrix.arch }}' build.yaml)"
+            echo 'tags<<IMAGE_TAGS'
+            image="ghcr.io/woowtech/woow-ha-code-server-${IMAGE_ARCH}"
+            if [[ "$CANDIDATE" == true ]]; then
+              echo "${image}:qa-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            else
+              echo "${image}:$(yq -r '.version' config.yaml)"
+              echo "${image}:latest"
+            fi
+            echo 'IMAGE_TAGS'
           } >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
@@ -177,7 +205,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push)
+        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push || inputs.candidate)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -189,14 +217,12 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.platform }}
-          push: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push) }}
+          push: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push || inputs.candidate) }}
           # A PR keeps its amd64 image in the local docker daemon for the
           # upgrade comparison's SBOM step below.
           load: ${{ github.event_name == 'pull_request' && matrix.arch == 'amd64' }}
           provenance: false
-          tags: |
-            ghcr.io/woowtech/woow-ha-code-server-${{ matrix.arch }}:${{ steps.meta.outputs.version }}
-            ghcr.io/woowtech/woow-ha-code-server-${{ matrix.arch }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             BUILD_FROM=${{ steps.meta.outputs.base_image }}
             BUILD_ARCH=${{ matrix.arch }}
